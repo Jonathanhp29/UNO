@@ -563,10 +563,12 @@ namespace UnoAttempt
             // Checks if the player can play
             bool valid = checkAbleToPlay(player);
 
+            // Git test
+
             // Terminates round if player cannot play
             if (!valid)
             {
-
+                return;
             }
         }
     }
