@@ -12,6 +12,9 @@ namespace Uno
 
             Player player = new Player(deck, 0);
 
+            manager.StartGame(deck);
+            manager.playerTurn(player, deck);
+
             /*foreach(Card card in deck.deck)
             {
                 Console.WriteLine(card);

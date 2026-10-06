@@ -113,6 +113,7 @@ namespace UnoAttempt
                 Console.WriteLine("You can not play that card");
             }
 
+            Console.WriteLine();
             // shows the whole hand
             for (int i = 0; i < hand.Count; i++)
             {
@@ -278,7 +279,6 @@ namespace UnoAttempt
             gameColour = card.colour;
         }
 
-        // Checks if a selected card is valid for play
         private bool checkValid(Card card)
         {
             // Checks if wild
@@ -304,7 +304,6 @@ namespace UnoAttempt
                 return false;
             }
         }
-
 
         private bool checkAbleToPlay(Player player)
         {
@@ -515,23 +514,10 @@ namespace UnoAttempt
             return;
         } 
 
-        private void playerTurn(Player player, Deck deck)
+        public void playerTurn(Player player, Deck deck)
         {
             // Creates a top card to compare with
             Card topCard = new(gameColour, topValue);
-
-            // Checks if you can play
-            bool canPlay = checkAbleToPlay(player);
-
-            // Terminates if needed
-            if (!canPlay)
-            {
-                Console.WriteLine($"\nYou can not play");
-                List<Card> card = deck.GiveHand(1);
-                Console.WriteLine($"You picked up a {card}");
-                player.hand.AddRange(card[0]);
-                return;
-            }
 
             // Checks if theres an active action happening then performs action
             if (activeAction)
@@ -560,14 +546,38 @@ namespace UnoAttempt
                 }
             }
 
-            // Checks if the player can play
-            bool valid = checkAbleToPlay(player);
+            // Checks if you can play
+            bool canPlay = checkAbleToPlay(player);
 
-            // Terminates round if player cannot play
-            if (!valid)
+            // Terminates if needed
+            if (!canPlay)
             {
+                Console.WriteLine($"\nYou can not play");
+                List<Card> card = deck.GiveHand(1);
+                Console.WriteLine($"You picked up a {card}");
+                player.hand.Add(card[0]);
                 return;
             }
+
+            // Tells the player the top card
+            Console.WriteLine($"The top card is a {topCard}");
+
+            //creates impossible card for 1st iteration
+            Card cardS = new("None", -1);
+            bool first = true;
+            // Loop checking if the card can be player and wont stop till a valid card is selected
+            while (cardS.compare(gameColour, topValue) == "None")
+            {
+                if (first)
+                {
+                    first = false;
+                    cardS = player.selectCard();
+                    continue;
+                }
+                cardS = player.selectCard(true);
+            }
+
+            playCard(player, cardS);
         }
     }
 }
