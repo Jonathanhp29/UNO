@@ -7,22 +7,27 @@ namespace Uno
     {
         static void Main(string[] args)
         {
-            GameManager manager = new();
-            Deck deck = new();
-
-            Player player = new Player(deck, 0);
-
-            manager.StartGame(deck);
-            manager.playerTurn(player, deck);
-
-            /*foreach(Card card in deck.deck)
+            while (true)
             {
-                Console.WriteLine(card);
-                Console.WriteLine(card.compare("Blue", 10) + "\n");
+
+                GameManager manager = new();
+                Deck deck = new();
+
+                // plays a round
+                Player winner = manager.playGame(deck);
+
+                // Announcess the winner and asks if user wants to play again
+                Console.WriteLine($"\n{winner} has won!");
+                Console.WriteLine("Play agian(Y/N): ");
+                string answer = Console.ReadLine();
+
+                if (answer.ToLower() != "y")
+                {
+                    break;
+                }
+
             }
-            //manager.StartGame(deck);
-            //Player player = new Player(deck, 1);
-            //Console.WriteLine(player.selectCard());*/
+            
         }
     }
 }

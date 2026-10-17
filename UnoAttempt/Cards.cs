@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Numerics;
 using System.Text;
 using System.Linq;
+using System.Xml;
 
 namespace UnoAttempt
 {
@@ -155,7 +156,7 @@ namespace UnoAttempt
     public class Deck
     {
         //Private array used to create cards
-        private String[] colours = ["Blue", "Red", "Yellow", "Green"];
+        private String[] colours = ["blue", "red", "yellow", "green"];
         public List<Card> deck;
 
         public Deck()
@@ -186,6 +187,31 @@ namespace UnoAttempt
 
         public List<Card> GiveHand(int num, bool topCard = false)
         {
+            // Checks if the request is too high and reshuffles the deck if so
+            if (num > deck.Count())
+            {
+                foreach (string colour in colours)
+                {
+                    //Repeats process for each colour
+                    for (int i = 0; i < 15; i++)
+                    {
+                        //Checks for 0 or wild to only add 1 of that colour
+                        if (i == 0 || i > 12)
+                        {
+                            //Creates card then adds to deck (Scard = special card)
+                            Card Scard = new(colour, i);
+                            deck.Add(Scard);
+                            continue;
+                        }
+
+                        //Creates card then adds to deck twice
+                        Card card = new(colour, i);
+                        deck.Add(card);
+                        deck.Add(card);
+                    }
+                }
+            }
+
             //Creates random numebr generator
             Random r = new();
 
@@ -230,7 +256,6 @@ namespace UnoAttempt
         private string[] colours = ["blue", "red", "yellow", "green"];
         private string gameColour;
         private int topValue;
-        private List<int> playerOrder = new();
         private bool direction = true;
         private int activePlayer;
         private bool activeAction = false;
@@ -269,7 +294,6 @@ namespace UnoAttempt
             {
                 Player player = new(deck, i);
                 playerList.Add(player);
-                playerOrder.Add(i+1);
             }
 
             //Creates a card
@@ -345,7 +369,7 @@ namespace UnoAttempt
 
         }
 
-        static private bool isAction(Card card)
+        private bool isAction(Card card)
         {
             if (card.action == "None")
             {
@@ -412,6 +436,7 @@ namespace UnoAttempt
                 
                 case "Wild":
                     wildColourChange(player, ai);
+                    topValue = card.value;
                     break;
             }
 
@@ -454,19 +479,6 @@ namespace UnoAttempt
 
         private void aiTurn(Player player, Deck deck)
         {
-
-            // Checks if can play
-            bool canPlay = checkAbleToPlay(player);
-
-            // Terminates turn if needed
-            if (!canPlay)
-            {
-                Console.WriteLine($"\nPlayer {activePlayer} picked up a card.\nPlayer {activePlayer} now has {player.hand.Count + 1} cards.");
-                List<Card> card = deck.GiveHand(1);
-                player.hand.AddRange(card);
-                return;
-            }
-
             // Checks if theres an active action happening then performs action
             if (activeAction)
             {
@@ -497,6 +509,21 @@ namespace UnoAttempt
                         return;
                 }
             }
+            
+            // Checks if can play
+            bool canPlay = checkAbleToPlay(player);
+
+            // Terminates turn if needed
+            if (!canPlay)
+            {
+                Console.WriteLine($"\nPlayer {activePlayer} picked up a card.\nPlayer {activePlayer} now has {player.hand.Count + 1} cards.");
+                List<Card> Ncard = deck.GiveHand(1);
+                player.hand.AddRange(Ncard);
+
+                return;
+            }
+
+            
 
             // Selects and plays a card
             Card selectedCard = aiSelection(player);
@@ -506,15 +533,19 @@ namespace UnoAttempt
                 playCard(player, selectedCard, true);
                 Console.WriteLine($"\nPlayer {activePlayer} played a {selectedCard}");
                 Console.WriteLine($"The new colour is {gameColour}");
+                if (selectedCard.value == 14)
+                {
+                    topValue = 14;
+                }
+                return;
             }
 
             playCard(player, selectedCard, true);
             Console.WriteLine($"\nPlayer {activePlayer} played a {selectedCard}");
-            Console.WriteLine($"{topValue.ToString()}\n {gameColour}\n  {direction}");
             return;
         } 
 
-        public void playerTurn(Player player, Deck deck)
+        private void playerTurn(Player player, Deck deck)
         {
             // Creates a top card to compare with
             Card topCard = new(gameColour, topValue);
@@ -538,7 +569,7 @@ namespace UnoAttempt
                         return;
 
                     case 14:
-                        Console.WriteLine($"\nPlayer {activePlayer} picked up 4 cards.\nPlayer {activePlayer} now has {player.hand.Count + 4} cards.");
+                        Console.WriteLine($"\nYou picked up 4 cards.\nYou now has {player.hand.Count + 4} cards.");
                         List<Card> cards4 = deck.GiveHand(4);
                         Console.WriteLine($"A {cards4[0]}, a {cards4[1]}, a {cards4[2]} and a {cards4[3]}");
                         player.hand.AddRange(cards4);
@@ -549,23 +580,23 @@ namespace UnoAttempt
             // Checks if you can play
             bool canPlay = checkAbleToPlay(player);
 
+            // Tells the player the top card
+            Console.WriteLine($"The top card is a {topCard}");
             // Terminates if needed
             if (!canPlay)
             {
                 Console.WriteLine($"\nYou can not play");
                 List<Card> card = deck.GiveHand(1);
-                Console.WriteLine($"You picked up a {card}");
+                Console.WriteLine($"You picked up a {card[0]}");
                 player.hand.Add(card[0]);
                 return;
             }
 
-            // Tells the player the top card
-            Console.WriteLine($"The top card is a {topCard}");
 
             //creates impossible card for 1st iteration
             Card cardS = new("None", -1);
             bool first = true;
-            // Loop checking if the card can be player and wont stop till a valid card is selected
+            // Loop checking if the card can be played and wont stop till a valid card is selected
             while (cardS.compare(gameColour, topValue) == "None")
             {
                 if (first)
@@ -579,5 +610,65 @@ namespace UnoAttempt
 
             playCard(player, cardS);
         }
+
+        public Player playGame(Deck deck)
+        {
+            // Does round prep
+            StartGame(deck);
+
+            int playerIndex = 0;
+            Player currentPlayer = playerList[0];
+            while (true)
+            {
+                // selects the current player
+                currentPlayer = playerList[playerIndex];
+                activePlayer = playerIndex + 1;
+
+                // Checks if its the player's or AI's turn
+                if (playerIndex == 0)
+                {
+                    playerTurn(currentPlayer, deck);
+                }
+                else
+                {
+                    aiTurn(currentPlayer, deck);
+                    Console.ReadKey();
+                }
+
+                // Checks if they have won
+                if (currentPlayer.hand.Count() < 1)
+                {
+                    break;
+                }
+
+                // Checks direction and changes the playerIndex
+                if (direction)
+                {
+                    if (playerIndex + 1 < playerList.Count())
+                    {
+                        playerIndex++;
+                    }
+                    else
+                    {
+                        playerIndex = 0;
+                    }
+                }
+                else
+                {
+                    if (playerIndex - 1 > -1)
+                    {
+                        playerIndex--;
+                    }
+                    else
+                    {
+                        playerIndex = playerList.Count() - 1;
+                    }
+                }
+
+            }
+
+            return currentPlayer;
+        }
+
     }
 }
